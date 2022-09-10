@@ -151,7 +151,7 @@ def computeData(symbol, weekly, monthly):
                        yearlyData])
     df1 = df.drop(columns=['6. volume', '7. dividend amount'])
     df2 = df1.rename(columns=rename)
-    df2.to_csv(f"{symbol}.csv", index=False)
+    # df2.to_csv(f"{symbol}.csv", index=False)
     # print(f"Export Complete")
     return df2
     # df2.to_excel(f"{symbol[:-4]}.xslx")
