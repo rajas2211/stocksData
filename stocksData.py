@@ -29,18 +29,51 @@ def executeSymbols(symbols):
             start_time = time.time()
             (weekly, monthly) = getData(symbol, dates)
             end_time = time.time()
-            print(f"Duration to fetch data: {end_time - start_time} s")
+            # print(f"Duration to fetch data: {end_time - start_time} s")
             if (end_time - start_time) <= 60:
                 numRequests += 2
             else:
                 numRequests = 0
-            print(f"Running API request count:{numRequests}")
+            # print(f"Running API request count:{numRequests}")
             df = computeData(symbol, weekly, monthly)
             # print(f"Done")
         except:
             print(f"Error occured: {symbol}")
         df.insert(0, 'symbol', symbol)
         writeMasterCSV(df)
+
+
+# def executeSymbols(symbols):
+#     if isinstance(symbols, str):
+#         symbols = [symbols]
+#     numOfSymbols = len(symbols)
+#     dates = getDates()
+#     numRequests=0
+#     for idx, symbol in enumerate(symbols):
+#         # if numRequests >= 4:
+#         #     numRequests = 0
+#         #     time.sleep(60)
+#         # print(f"{symbol} Start")
+#         print(f"Getting data for {symbol} ({idx+1}/{numOfSymbols})")
+#         try:
+#             start_time = time.time()
+#             (weekly, monthly, numRequests) = getData(symbol, dates, numRequests)
+#             end_time = time.time()
+#             # print(f"Duration to fetch data: {end_time - start_time} s")
+#             if (end_time - start_time) > 60:
+#                 numRequests = 0
+#             # else:
+#             #     numRequests = 0
+#             # print(f"Running API request count:{numRequests}")
+#             df = computeData(symbol, weekly, monthly)
+#             # print(f"Done")
+#         except:
+#             print(f"Error occured: {symbol}")
+#         try:
+#             df.insert(0, 'symbol', symbol)
+#         except:
+#             continue
+#         writeMasterCSV(df)
 
 def writeMasterCSV(df):
     outputFile = f"masterData-{pd.to_datetime('today').strftime('%Y-%m-%d')}.csv"
@@ -57,14 +90,41 @@ def getData(symbol, dates, BSE=True):
     if BSE:
         symbol = symbol+'.BSE'
     try:
-        print(f"Data fetch start")
+        # print(f"Data fetch start")
         weekly, metaDataW  = ts.get_weekly_adjusted(symbol=symbol)
         monthly, metaDataM = ts.get_monthly_adjusted(symbol=symbol)
-        print(f"Data fetch complete")
+        # print(f"Data fetch complete")
     except Exception as e:
         print(e)
         print(f"Error Raised")
     return (weekly, monthly)
+
+
+# def getData(symbol, dates, numRequests= 0, BSE=True):
+
+#     ts = TimeSeries(key=apiKey, output_format='pandas')
+#     if BSE:
+#         symbol = symbol+'.BSE'
+#     try:
+#         # print(f"Data fetch start")
+#         if numRequests >= 5 :
+#             time.sleep(60)
+#             numRequests = 0            
+#         weekly, metaDataW  = ts.get_weekly_adjusted(symbol=symbol)
+#         numRequests += 1
+
+#         if numRequests >= 5 :
+#             time.sleep(60)
+#             numRequests = 0
+#         monthly, metaDataM = ts.get_monthly_adjusted(symbol=symbol)
+#         numRequests += 1
+        
+#         # print(f"Data fetch complete")
+#     except Exception as e:
+#         print(e)
+#         print(f"Error Raised")
+#     return (weekly, monthly, numRequests)
+
 
 def computeData(symbol, weekly, monthly):
     (weekEnd, monthEnd,
@@ -92,7 +152,7 @@ def computeData(symbol, weekly, monthly):
     df1 = df.drop(columns=['6. volume', '7. dividend amount'])
     df2 = df1.rename(columns=rename)
     df2.to_csv(f"{symbol}.csv", index=False)
-    print(f"Export Complete")
+    # print(f"Export Complete")
     return df2
     # df2.to_excel(f"{symbol[:-4]}.xslx")
 
