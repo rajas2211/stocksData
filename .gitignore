@@ -1,2 +1,3 @@
 *.csv
 ___pycache__/
+!symbols.csv
