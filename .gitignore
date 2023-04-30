@@ -1,4 +1,5 @@
 *.csv
 ___pycache__/
 !symbols.csv
+!symbolsT.csv
 *.zip
