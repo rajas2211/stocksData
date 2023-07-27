@@ -33,6 +33,7 @@ def load_symbols(filename):
 def execute_symbols(symbols, output_file=None):
     """Runs script
     """
+    # print("In execute symbols")
     if isinstance(symbols, str):
         symbols = [symbols]
     num_symbols = len(symbols)
@@ -166,24 +167,15 @@ def computeData(symbol, weekly, monthly):
      halfBegin, halfEnd,
      yearBegin, yearEnd) = getDates()
     # print("Dates retrived")
-     quarterBegin, quarterEnd,
-     halfBegin, halfEnd,
-     yearBegin, yearEnd) = getDates()
-    # print("Dates retrived")
     weeklyData = getDictStandard(weekly, weekEnd, 'weekly')
     monthlyData = getDictStandard(monthly, monthEnd, 'monthly')
-    quarterlyData = get_dict_custom(monthly, quarterBegin, quarterEnd,
-                                    'quarterly')
-    halflyData = get_dict_custom(monthly, halfBegin, halfEnd, 'halfly')
-    yearlyData = get_dict_custom(monthly, yearBegin, yearEnd, 'yearly')
+    quarterlyData = getDictCustom(monthly, quarterBegin, quarterEnd,
+                                  'quarterly')
+    halflyData = getDictCustom(monthly, halfBegin, halfEnd, 'halfly')
+    yearlyData = getDictCustom(monthly, yearBegin, yearEnd, 'yearly')
     # print(weeklyData, monthlyData, quarterlyData, halflyData, yearlyData)
 
     rename = {
-        '1. open': 'open',
-        '2. high': 'high',
-        '3. low': 'low',
-        '4. close': 'close',
-        '5. adjusted close': 'adjclose',
         '1. open': 'open',
         '2. high': 'high',
         '3. low': 'low',
@@ -194,15 +186,12 @@ def computeData(symbol, weekly, monthly):
     df = pd.DataFrame([weeklyData, monthlyData, quarterlyData, halflyData,
                        yearlyData])
     # print(f"DF Ready")
-    # print(f"DF Ready")
     df1 = df.drop(columns=['6. volume', '7. dividend amount'])
     df2 = df1.rename(columns=rename)
-    # df2.to_csv(f"{symbol}.csv", index=False)
     # df2.to_csv(f"{symbol}.csv", index=False)
     # print(f"Export Complete")
     return df2
     # df2.to_excel(f"{symbol[:-4]}.xslx")
-
 
 
 def getDates():
@@ -211,17 +200,13 @@ def getDates():
     dayOfTheWeek = today.day_of_week
     # End of week date
     weekEnd = (today + pd.DateOffset(days=-abs(dayOfTheWeek - 4))).normalize()
-    # End of week date
-    weekEnd = (today + pd.DateOffset(days=-abs(dayOfTheWeek - 4))).normalize()
 
-    # End of Month date
     # End of Month date
     if (today.normalize() < (today + pd.offsets.BMonthEnd(n=0)).normalize()):
         monthEnd = (today + pd.offsets.MonthEnd(n=-1)).normalize()
     else:
         monthEnd = today.normalize()
 
-    # Quarter Dates
     # Quarter Dates
     if (today.normalize() < (today + pd.offsets.BQuarterEnd(n=0)).normalize()):
         quarterEnd = (today + pd.offsets.QuarterEnd(n=-1)).normalize()
@@ -230,14 +215,12 @@ def getDates():
     quarterBegin = quarterEnd + pd.offsets.QuarterBegin(n=-1, startingMonth=1)
 
     # Semiannual Dates
-    # Semiannual Dates
 
     if not today.is_year_end:
         if (today.month > 6) or (today.month == 6 and today.day == 30):
             halfEnd = (
                 (today + pd.DateOffset(months=-abs(today.month - 6)))
                 + pd.offsets.QuarterEnd(n=0)
-            ).normalize()
             ).normalize()
             halfBegin = pd.Timestamp(datetime.date(halfEnd.year, 1, 1))
         else:
@@ -248,7 +231,6 @@ def getDates():
         halfBegin = pd.Timestamp(datetime.date(halfEnd.year, 6, 1))
 
     # Annual Dates
-    # Annual Dates
 
     if (today.normalize() < (today + pd.offsets.BYearEnd(n=0)).normalize()):
         yearEnd = (today + pd.offsets.YearEnd(n=-1)).normalize()
@@ -256,9 +238,7 @@ def getDates():
         yearEnd = (today).normalize()
     yearBegin = yearEnd + pd.offsets.YearBegin(n=-1)
 
-
     return (weekEnd, monthEnd,
-            quarterBegin, quarterEnd,
             quarterBegin, quarterEnd,
             halfBegin, halfEnd,
             yearBegin, yearEnd)
@@ -284,7 +264,7 @@ def getDictStandard(df, period_end, label):
     return dictData
 
 
-def get_dict_custom(df, period_begin, period_end, label):
+def getDictCustom(df, period_begin, period_end, label):
     periodly = df.loc[
         df.index[(df.index <= period_end) & (df.index > period_begin)]]
     if periodly.empty:
