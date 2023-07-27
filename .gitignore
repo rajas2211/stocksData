@@ -3,3 +3,5 @@ ___pycache__/
 !symbols.csv
 !symbolsT.csv
 *.zip
+apiKey.txt
+.vscode/
