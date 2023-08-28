@@ -30,14 +30,14 @@ def load_symbols(filename):
     return df['symbols'].to_list()
 
 
-def execute_symbols(symbols, output_file=None):
+def execute_symbols(symbols, output_file, exchange):
     """Runs script
     """
     # print("In execute symbols")
     if isinstance(symbols, str):
         symbols = [symbols]
     num_symbols = len(symbols)
-    dates = getDates()
+    # dates = getDates()
     num_requests = 0
     for idx, symbol in enumerate(symbols):
         if num_requests >= 4:
@@ -47,7 +47,8 @@ def execute_symbols(symbols, output_file=None):
         print(f"Getting data for {symbol} ({idx+1}/{num_symbols})")
         try:
             start_time = time.time()
-            (weekly, monthly) = get_data(symbol, dates)
+            # (weekly, monthly) = get_data(symbol, dates, exchange)
+            (weekly, monthly) = get_data(symbol, exchange)
             end_time = time.time()
             # print(f"Duration to fetch data: {end_time - start_time} s")
             if (end_time - start_time) <= 60:
@@ -99,7 +100,7 @@ def execute_symbols(symbols, output_file=None):
 #         write_master_csv(df)
 
 
-def write_master_csv(df, output_file=None):
+def write_master_csv(df, output_file):
     """Creates output file
     """
     if not output_file:
@@ -109,29 +110,29 @@ def write_master_csv(df, output_file=None):
               header=not os.path.exists(output_file))
 
 
-def run_script(filename, output_file=None):
+def run_script(filename, output_file=None, exchange='BSE'):
     """Runs script
     """
     symbols = load_symbols(filename)
-    execute_symbols(symbols, output_file)
+    execute_symbols(symbols, output_file, exchange)
 
-    print(f"Script execution complete")
+    print("Script execution complete")
 
 
-def get_data(symbol, dates, BSE=True):
+# def get_data(symbol, dates, exchange='BSE'):
+def get_data(symbol, exchange):
     """Get data from Alpha_Vantage
     """
     ts = TimeSeries(key=apiKey, output_format='pandas')
-    if BSE:
-        symbol = symbol+'.BSE'
+    symbol = f'{symbol}.{exchange}'
     try:
         # print(f"Data fetch start")
-        weekly, meta_data_w = ts.get_weekly_adjusted(symbol=symbol)
-        monthly, meta_data_m = ts.get_monthly_adjusted(symbol=symbol)
+        weekly, *meta_data_w = ts.get_weekly_adjusted(symbol=symbol)
+        monthly, *meta_data_m = ts.get_monthly_adjusted(symbol=symbol)
         # print(f"Data fetch complete")
-    except Exception as e:
-        print(e)
-        print(f"Error Raised")
+    except Exception as exception:
+        print(exception)
+        print("Error Raised")
     return (weekly, monthly)
 
 
