@@ -5,3 +5,4 @@ ___pycache__/
 *.zip
 apiKey.txt
 .vscode/
+*.xlsx
