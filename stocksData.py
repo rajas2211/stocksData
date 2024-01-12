@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 
 with open('apiKey.txt', 'r', encoding='UTF-8') as f:
-    apiKey = f.readline()
+    apiKeys = [line.rstrip() for line in f]
 
 
 def load_symbols(filename):
@@ -36,30 +36,32 @@ def execute_symbols(symbols, output_file, exchange):
     # print("In execute symbols")
     if isinstance(symbols, str):
         symbols = [symbols]
-    num_symbols = len(symbols)
-    # dates = getDates()
-    num_requests = 0
+    numSymbols = len(symbols)
+    numRequests = 0
     for idx, symbol in enumerate(symbols):
-        if num_requests >= 4:
-            num_requests = 0
-            time.sleep(60)
-        # print(f"{symbol} Start")
-        print(f"Getting data for {symbol} ({idx+1}/{num_symbols})")
+        print(f"Getting data for {symbol} ({idx+1}/{numSymbols})")
         try:
-            start_time = time.time()
-            # (weekly, monthly) = get_data(symbol, dates, exchange)
-            (weekly, monthly) = get_data(symbol, exchange)
-            end_time = time.time()
-            # print(f"Duration to fetch data: {end_time - start_time} s")
-            if (end_time - start_time) <= 60:
-                num_requests += 2
-            else:
-                num_requests = 0
-            # print(f"Running API request count:{num_requests}")
+            apiKeyIndex = int(numRequests/24)
+            apiKey = apiKeys[apiKeyIndex]
+            scriptData = get_data(symbol, exchange, apiKey)
+            while not scriptData:
+                apiKeyIndex += 1
+                try:
+                    apiKey = apiKeys[apiKeyIndex]
+                except IndexError:
+                    print("API keys out of range. Ending program now...")
+                    break
+                numRequests = 0
+                scriptData = get_data(symbol, exchange, apiKey)
+            if not scriptData:
+                break
+            weekly = scriptData[0]
+            monthly = scriptData[1]
+            numRequests += 2
             df = computeData(symbol, weekly, monthly)
-            # print(df)
-            # print(df)
-            # print(f"Done")
+        except IndexError:
+            print("API keys out of range. Ending program now...")
+            break
         except:
             print(f"Error occurred: {symbol}")
         df.insert(0, 'symbol', symbol)
@@ -69,26 +71,26 @@ def execute_symbols(symbols, output_file, exchange):
 # def execute_symbols(symbols):Runs script
 #     if isinstance(symbols, str):
 #         symbols = [symbols]
-#     num_symbols = len(symbols)
+#     numSymbols = len(symbols)
 #     dates = getDates()
-#     num_requests=0
+#     numRequests=0
 #     for idx, symbol in enumerate(symbols):
-#         # if num_requests >= 4:
-#         #     num_requests = 0
+#         # if numRequests >= 4:
+#         #     numRequests = 0
 #         #     time.sleep(60)
 #         # print(f"{symbol} Start")
-#         print(f"Getting data for {symbol} ({idx+1}/{num_symbols})")
+#         print(f"Getting data for {symbol} ({idx+1}/{numSymbols})")
 #         try:
 #             start_time = time.time()
-#             (weekly, monthly, num_requests) = get_data(symbol, dates,
-#                                                       num_requests)
+#             (weekly, monthly, numRequests) = get_data(symbol, dates,
+#                                                       numRequests)
 #             end_time = time.time()
 #             # print(f"Duration to fetch data: {end_time - start_time} s")
 #             if (end_time - start_time) > 60:
-#                 num_requests = 0
+#                 numRequests = 0
 #             # else:
-#             #     num_requests = 0
-#             # print(f"Running API request count:{num_requests}")
+#             #     numRequests = 0
+#             # print(f"Running API request count:{numRequests}")
 #             df = computeData(symbol, weekly, monthly)
 #             # print(f"Done")
 #         except:
@@ -120,46 +122,47 @@ def run_script(filename, output_file=None, exchange='BSE'):
 
 
 # def get_data(symbol, dates, exchange='BSE'):
-def get_data(symbol, exchange):
+def get_data(symbol, exchange, apiKey):
     """Get data from Alpha_Vantage
     """
     ts = TimeSeries(key=apiKey, output_format='pandas')
     symbol = f'{symbol}.{exchange}'
     try:
         # print(f"Data fetch start")
+        print(f"Using API: {apiKey}")
         weekly, *meta_data_w = ts.get_weekly_adjusted(symbol=symbol)
         monthly, *meta_data_m = ts.get_monthly_adjusted(symbol=symbol)
         # print(f"Data fetch complete")
-    except Exception as exception:
-        print(exception)
-        print("Error Raised")
+    except ValueError as exception:
+        print("API request limit reached. Trying next API key!")
+        return False
     return (weekly, monthly)
 
 
-# def get_data(symbol, dates, num_requests= 0, BSE=True):
+# def get_data(symbol, dates, numRequests= 0, BSE=True):
 
 #     ts = TimeSeries(key=apiKey, output_format='pandas')
 #     if BSE:
 #         symbol = symbol+'.BSE'
 #     try:
 #         # print(f"Data fetch start")
-#         if num_requests >= 5 :
+#         if numRequests >= 5 :
 #             time.sleep(60)
-#             num_requests = 0
+#             numRequests = 0
 #         weekly, meta_data_w  = ts.get_weekly_adjusted(symbol=symbol)
-#         num_requests += 1
+#         numRequests += 1
 
-#         if num_requests >= 5 :
+#         if numRequests >= 5 :
 #             time.sleep(60)
-#             num_requests = 0
+#             numRequests = 0
 #         monthly, meta_data_m = ts.get_monthly_adjusted(symbol=symbol)
-#         num_requests += 1
+#         numRequests += 1
 
 #         # print(f"Data fetch complete")
 #     except Exception as e:
 #         print(e)
 #         print(f"Error Raised")
-#     return (weekly, monthly, num_requests)
+#     return (weekly, monthly, numRequests)
 
 
 def computeData(symbol, weekly, monthly):
